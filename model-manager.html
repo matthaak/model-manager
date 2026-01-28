@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Model Manager - Port ${PORT}</title>
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+<h1>Model Manager - Port ${PORT}</h1>
+<table border="1" cellpadding="10" id="dataTable">
+<thead><tr><th>Key</th><th>Value</th><th>Action</th></tr></thead>
+<tbody id="tableBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+</table>
+<br/>
+<button onclick="showForm()">Add New</button>
+<form id="editForm" style="display:none">
+<h2 id="formTitle">Edit</h2>
+<div id="keyField" style="display:none">
+<label>Key: <input type="text" id="keyInput"></label>
+</div>
+<label>Value: <textarea id="valueInput" rows="10" cols="50"></textarea></label>
+<br>
+<button type="button" onclick="saveForm()">Save</button>
+<button type="button" onclick="hideForm()">Cancel</button>
+</form>
+<script>
+let currentData = {};
+let editingKey = null;
+let isNew = false;
+
+const tableBody = document.getElementById('tableBody');
+const form = document.getElementById('editForm');
+const keyField = document.getElementById('keyField');
+const keyInput = document.getElementById('keyInput');
+const valueInput = document.getElementById('valueInput');
+const formTitle = document.getElementById('formTitle');
+
+let socket;
+try {
+  socket = io();
+  console.log('Socket.IO initialized');
+} catch (e) {
+  console.error('Failed to initialize Socket.IO:', e);
+}
+
+function escapeHtml(t) {
+  const d = document.createElement('div');
+  d.textContent = t;
+  return d.innerHTML;
+}
+
+function renderTable() {
+  const entries = Object.entries(currentData).sort(([a], [b]) => a.localeCompare(b));
+  if (entries.length === 0) {
+    tableBody.innerHTML = '<tr><td colspan="3">No key-value entries.</td></tr>';
+    return;
+  }
+  
+  // Clear existing rows
+  tableBody.innerHTML = '';
+  
+  entries.forEach(([k, v]) => {
+    const row = document.createElement('tr');
+    
+    // Key cell
+    const keyCell = document.createElement('td');
+    keyCell.textContent = k;
+    row.appendChild(keyCell);
+    
+    // Value cell
+    const valueCell = document.createElement('td');
+    const pre = document.createElement('pre');
+    pre.textContent = JSON.stringify(v, null, 2);
+    valueCell.appendChild(pre);
+    row.appendChild(valueCell);
+    
+    // Edit button cell
+    const editCell = document.createElement('td');
+    const editButton = document.createElement('button');
+    editButton.textContent = 'Edit';
+    editButton.onclick = () => edit(k);
+    editCell.appendChild(editButton);
+    row.appendChild(editCell);
+    
+    tableBody.appendChild(row);
+  });
+}
+
+window.showForm = function() {
+  isNew = true;
+  editingKey = null;
+  formTitle.textContent = 'Add New';
+  keyField.style.display = 'block';
+  keyInput.value = '';
+  valueInput.value = '{}';
+  form.style.display = 'block';
+};
+
+window.hideForm = function() {
+  form.style.display = 'none';
+};
+
+window.edit = function(k) {
+  isNew = false;
+  editingKey = k;
+  formTitle.textContent = 'Edit: ' + escapeHtml(k);
+  keyField.style.display = 'none';
+  keyInput.value = k;
+  valueInput.value = JSON.stringify(currentData[k], null, 2);
+  form.style.display = 'block';
+};
+
+window.saveForm = async function() {
+  const k = isNew ? keyInput.value.trim() : editingKey;
+  if (!k) {
+    alert('Key required');
+    return;
+  }
+  if (isNew && k in currentData && !confirm('Overwrite?')) {
+    return;
+  }
+  try {
+    const v = JSON.parse(valueInput.value);
+    const r = await fetch('/api/set', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: k, value: v })
+    });
+    if (r.ok) {
+      hideForm();
+    } else {
+      alert('Save failed');
+    }
+  } catch (e) {
+    alert('Invalid JSON: ' + e.message);
+  }
+}
+
+if (socket) {
+  socket.on('connect', () => {
+    console.log('Socket connected');
+    socket.emit('request-state');
+  });
+  socket.on('state', (d) => {
+    console.log('Received state:', d);
+    currentData = d || {};
+    renderTable();
+  });
+  socket.on('change', (e) => {
+    if (e.newValue === undefined) {
+      delete currentData[e.key];
+    } else {
+      currentData[e.key] = e.newValue;
+    }
+    renderTable();
+  });
+  socket.on('disconnect', () => {
+    console.log('Socket disconnected');
+  });
+  socket.on('error', (err) => {
+    console.error('Socket error:', err);
+  });
+} else {
+  console.error('Socket.IO not available');
+}
+
+fetch('/api/entries')
+  .then(r => r.json())
+  .then(d => {
+    currentData = d || {};
+    renderTable();
+  });
+</script>
+</body>
+</html>
