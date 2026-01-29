@@ -73,7 +73,7 @@ class ModelManager {
   }
 
   start() {
-    this.server.listen(this.port, () => {
+    this.server.listen(this.port, 'localhost', () => {
       console.log(`[Manager ${this.port}] Model manager running on http://localhost:${this.port}`);
     });
   }
