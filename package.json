@@ -4,7 +4,8 @@
   "description": "Snow Syncer with Model Manager",
   "main": "run.js",
   "scripts": {
-    "start": "node run.js"
+    "start": "node run.js",
+    "test": "node --test observable-model.test.js"
   },
   "dependencies": {
     "express": "^4.18.2",
