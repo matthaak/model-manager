@@ -72,6 +72,15 @@ class ObservableModel extends EventEmitter {
     }
   }
 
+  /**
+   * Return the model to its initial state: remove all listeners and delete all keys.
+   * Does not emit change events.
+   */
+  reset() {
+    this.removeAllListeners();
+    this._state = {};
+  }
+
   entries() {
     return { ...this._state };
   }

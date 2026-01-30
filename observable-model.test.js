@@ -115,4 +115,37 @@ describe('ObservableModel', () => {
       assert.strictEqual(events.length, 0);
     });
   });
+
+  describe('reset()', () => {
+    it('removes all listeners and deletes all keys', () => {
+      const model = new ObservableModel({ a: 1, b: 2 });
+      const changeEvents = [];
+      const emitEvents = [];
+      model.on('change', (e) => changeEvents.push(e));
+      model.on('emit', (e) => emitEvents.push(e));
+
+      model.reset();
+
+      assert.deepStrictEqual(model.entries(), {});
+      assert.strictEqual(model.get('a'), undefined);
+      assert.strictEqual(model.get('b'), undefined);
+      model.set('x', 1);
+      model.emit('x');
+      assert.strictEqual(changeEvents.length, 0);
+      assert.strictEqual(emitEvents.length, 0);
+    });
+
+    it('leaves model usable after reset', () => {
+      const model = new ObservableModel({ a: 1 });
+      model.reset();
+
+      const events = [];
+      model.on('change', (e) => events.push(e));
+      model.set('b', 2);
+
+      assert.strictEqual(model.get('b'), 2);
+      assert.strictEqual(events.length, 1);
+      assert.deepStrictEqual(events[0], { key: 'b', oldValue: undefined, newValue: 2 });
+    });
+  });
 });
