@@ -1,6 +1,6 @@
 {
   "name": "snow-syncer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Snow Syncer with Model Manager",
   "main": "index.js",
   "scripts": {
