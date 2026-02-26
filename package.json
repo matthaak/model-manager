@@ -2,7 +2,7 @@
   "name": "snow-syncer",
   "version": "1.0.0",
   "description": "Snow Syncer with Model Manager",
-  "main": "run.js",
+  "main": "index.js",
   "scripts": {
     "start": "node run.js",
     "test": "node --test observable-model.test.js"
