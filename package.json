@@ -1,7 +1,7 @@
 {
-  "name": "snow-syncer",
+  "name": "observable-state-model",
   "version": "1.0.1",
-  "description": "Snow Syncer with Model Manager",
+  "description": "Observable state model with model manager",
   "main": "index.js",
   "scripts": {
     "start": "node run.js",
